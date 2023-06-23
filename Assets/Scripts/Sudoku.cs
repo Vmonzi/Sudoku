@@ -22,11 +22,6 @@ public class Sudoku : MonoBehaviour
     bool canPlayMusic = false;
     List<int> nums = new List<int>();
 
-    private int _stepCount;
-
-    public Matrix<Cell> Board { get { return _board; } }
-    public int StepCount { get { return _stepCount; } }
-
 
 
     float r = 1.0594f;
@@ -83,6 +78,41 @@ public class Sudoku : MonoBehaviour
     int watchdog = 0;
     bool RecuSolve(Matrix<int> matrixParent, int x, int y, int protectMaxDepth, List<Matrix<int>> solution)
     {
+        if (x == _bigSide)
+        {
+            x = 0;
+            y++;
+
+            if (y == _bigSide)
+            {
+                solution.Add(matrixParent.Clone());
+                return true;
+            }
+        }
+
+        if (matrixParent[x, y] != 0)
+        {
+            return RecuSolve(matrixParent, x + 1, y, protectMaxDepth, solution);
+        }
+
+        List<int> values = new List<int>(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+        ShuffleList(values);
+
+        foreach (int value in values)
+        {
+            if (CanPlaceValue(matrixParent, value, x, y))
+            {
+                matrixParent[x, y] = value;
+
+                if (RecuSolve(matrixParent, x + 1, y, protectMaxDepth, solution))
+                {
+                    return true;
+                }
+
+                matrixParent[x, y] = 0;
+            }
+        }
+
         return false;
     }
 
@@ -108,26 +138,23 @@ public class Sudoku : MonoBehaviour
     //IMPLEMENTAR - punto 3
     IEnumerator ShowSequence(List<Matrix<int>> seq)
     {
-        yield return new WaitForSeconds(0);
+        for (int i = 0; i < seq.Count; i++)
+        {
+            Matrix<int> step = seq[i];
+            ApplyStep(step);
+            feedback.text = string.Format("Pasos: {0}/{1} - {2} - {3}", i + 1, seq.Count, memory, canSolve);
+
+            yield return new WaitForSeconds(stepDuration);
+        }
+
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.R) || Input.GetMouseButtonDown(1))
-        {
             SolvedSudoku();
-            RemoveRandomCells(difficulty);
-            Debug.Log("Resuelvo");
-        }
-
         else if (Input.GetKeyDown(KeyCode.C) || Input.GetMouseButtonDown(0))
-        {
-
             CreateSudoku();
-            Debug.Log("Creo");
-
-        }
-
     }
 
     //modificar lo necesario para que funcione.
@@ -137,111 +164,13 @@ public class Sudoku : MonoBehaviour
         nums = new List<int>();
         var solution = new List<Matrix<int>>();
         watchdog = 100000;
-        var result = false;//????
+        var result = RecuSolve(_createdMatrix, 0, 0, difficulty, solution);
         long mem = System.GC.GetTotalMemory(true);
         memory = string.Format("MEM: {0:f2}MB", mem / (1024f * 1024f));
         canSolve = result ? " VALID" : " INVALID";
-        _stepCount = 0;
-        RecursiveSolve(0, 0);
-    }
-    private bool RecursiveSolve(int row, int col)
-    {
-        if (col == 9)
-        {
-            col = 0;
-            row++;
+        feedback.text = "Pasos: " + solution.Count + "/" + solution.Count + " - " + memory + " - " + canSolve;
 
-            if (row == 9)
-            {
-                return true; // Sudoku solved
-            }
-        }
-
-        if (_board[row, col].locked)
-        {
-            return RecursiveSolve(row, col + 1);
-        }
-
-        for (int num = 1; num <= 9; num++)
-        {
-            if (IsSafe(row, col, num))
-            {
-                _board[row, col].number = num;
-                _stepCount++;
-
-                if (RecursiveSolve(row, col + 1))
-                {
-                    return true;
-                }
-
-                _board[row, col].number = Cell.EMPTY;
-            }
-        }
-
-        return false;
-    }
-
-    private bool IsSafe(int row, int col, int num)
-    {
-        return !IsNumInRow(row, num) && !IsNumInColumn(col, num) && !IsNumInSection(row, col, num);
-    }
-
-    private bool IsNumInRow(int row, int num)
-    {
-        for (int col = 0; col < 9; col++)
-        {
-            if (_board[row, col].number == num)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private bool IsNumInColumn(int col, int num)
-    {
-        for (int row = 0; row < 9; row++)
-        {
-            if (_board[row, col].number == num)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private bool IsNumInSection(int row, int col, int num)
-    {
-        int sectionRow = row - (row % 3);
-        int sectionCol = col - (col % 3);
-
-        for (int i = 0; i < 3; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                if (_board[sectionRow + i, sectionCol + j].number == num)
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private void RemoveRandomCells(int count)
-    {
-        int cellsRemoved = 0;
-        while (cellsRemoved < count)
-        {
-            int row = Random.Range(0, 9);
-            int col = Random.Range(0, 9);
-
-            if (!_board[row, col].locked && _board[row, col].number != Cell.EMPTY)
-            {
-                _board[row, col].number = Cell.EMPTY;
-                cellsRemoved++;
-            }
-        }
+        StartCoroutine(ShowSequence(solution));
     }
 
     void CreateSudoku()
@@ -253,7 +182,7 @@ public class Sudoku : MonoBehaviour
         List<Matrix<int>> l = new List<Matrix<int>>();
         watchdog = 100000;
         GenerateValidLine(_createdMatrix, 0, 0);
-        var result = false;
+        var result = RecuSolve(_createdMatrix, 0, 0, difficulty, l);
         _createdMatrix = l[0].Clone();
         LockRandomCells();
         ClearUnlocked(_createdMatrix);
@@ -284,6 +213,33 @@ public class Sudoku : MonoBehaviour
         }
     }
 
+    void ShuffleList<T>(List<T> list)
+    {
+        int n = list.Count;
+
+        while (n > 1)
+        {
+            n--;
+            int k = Random.Range(0, n + 1);
+            T value = list[k];
+            list[k] = list[n];
+            list[n] = value;
+        }
+    }
+
+    void ApplyStep(Matrix<int> step)
+    {
+        for (int y = 0; y < _board.Height; y++)
+        {
+            for (int x = 0; x < _board.Width; x++)
+            {
+                if (!_board[x, y].locked)
+                {
+                    _board[x, y].number = step[x, y];
+                }
+            }
+        }
+    }
 
     void ClearUnlocked(Matrix<int> mtx)
     {
