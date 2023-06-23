@@ -117,12 +117,14 @@ public class Sudoku : MonoBehaviour
         {
             SolvedSudoku();
             RemoveRandomCells(difficulty);
+            Debug.Log("Resuelvo");
         }
 
         else if (Input.GetKeyDown(KeyCode.C) || Input.GetMouseButtonDown(0))
         {
 
             CreateSudoku();
+            Debug.Log("Creo");
 
         }
 
