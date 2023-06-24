@@ -75,7 +75,7 @@ public class Sudoku : MonoBehaviour
 
 
     //IMPLEMENTAR
-    int watchdog = 0;
+    int watchdog;
     bool RecuSolve(Matrix<int> matrixParent, int x, int y, int protectMaxDepth, List<Matrix<int>> solution)
     {
         if (x == _bigSide)
@@ -340,7 +340,7 @@ public class Sudoku : MonoBehaviour
         else
             cuadrante.y = 6;
 
-        area = mtx.GetRange((int)cuadrante.x, (int)cuadrante.y, (int)cuadrante.x + 3, (int)cuadrante.y + 3);
+        area = mtx.GetRange((int)cuadrante.x, (int)cuadrante.y, (int)cuadrante.x + 2, (int)cuadrante.y + 2);
         total.AddRange(fila);
         total.AddRange(columna);
         total.AddRange(area);
