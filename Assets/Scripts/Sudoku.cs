@@ -9,7 +9,7 @@ public class Sudoku : MonoBehaviour
     public Cell prefabCell;
     public Canvas canvas;
     public Text feedback;
-    public float stepDuration = 0.05f;
+    public float stepDuration = 0.01f;
     [Range(1, 82)] public int difficulty = 40;
 
     Matrix<Cell> _board;
@@ -42,6 +42,13 @@ public class Sudoku : MonoBehaviour
         frequency = frequency * Mathf.Pow(r, 2);
         CreateEmptyBoard();
         ClearBoard();
+    }
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R) || Input.GetMouseButtonDown(1))
+            SolvedSudoku();
+        else if (Input.GetKeyDown(KeyCode.C) || Input.GetMouseButtonDown(0))
+            CreateSudoku();
     }
 
     void ClearBoard()
@@ -149,13 +156,7 @@ public class Sudoku : MonoBehaviour
 
     }
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.R) || Input.GetMouseButtonDown(1))
-            SolvedSudoku();
-        else if (Input.GetKeyDown(KeyCode.C) || Input.GetMouseButtonDown(0))
-            CreateSudoku();
-    }
+  
 
     //modificar lo necesario para que funcione.
     void SolvedSudoku()
@@ -165,7 +166,7 @@ public class Sudoku : MonoBehaviour
         var solution = new List<Matrix<int>>();
         watchdog = 100000;
         var result = RecuSolve(_createdMatrix, 0, 0, difficulty, solution);
-        long mem = System.GC.GetTotalMemory(true);
+        var mem = System.GC.GetTotalMemory(true);
         memory = string.Format("MEM: {0:f2}MB", mem / (1024f * 1024f));
         canSolve = result ? " VALID" : " INVALID";
         feedback.text = "Pasos: " + solution.Count + "/" + solution.Count + " - " + memory + " - " + canSolve;
