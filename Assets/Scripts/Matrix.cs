@@ -6,13 +6,12 @@ using System.Collections.Generic;
 
 public class Matrix<T> : IEnumerable<T>
 {
-    //IMPLEMENTAR: ESTRUCTURA INTERNA- DONDE GUARDO LOS DATOS?
+
     T[,] myMatrix;
     [SerializeField] int _myWidth;
     [SerializeField] int _myHeight;
     public Matrix(int width, int height)
     {
-        //IMPLEMENTAR: constructor
 
         myMatrix = new T[width, height];
 
@@ -55,7 +54,6 @@ public class Matrix<T> : IEnumerable<T>
 
     public void SetRangeTo(int x0, int y0, int x1, int y1, T item)
     {
-        //IMPLEMENTAR: iguala todo el rango pasado por parámetro a item
         for (int i = x0; i <= x1; i++)
         {
             for (int j = y0; j <= y1; j++)
@@ -65,7 +63,6 @@ public class Matrix<T> : IEnumerable<T>
         }
     }
 
-    //Todos los parametros son INCLUYENTES
     public List<T> GetRange(int x0, int y0, int x1, int y1)
     {
         List<T> l = new List<T>();
@@ -79,20 +76,16 @@ public class Matrix<T> : IEnumerable<T>
         return l;
     }
 
-    //Para poder igualar valores en la matrix a algo
     public T this[int x, int y]
     {
         get { return myMatrix[x, y]; }
         set { myMatrix[x, y] = value; }
     }
 
-    // aca iria el getLenght total
     public int Width { get { return _myWidth; } }
 
-    //aca por posicion
     public int Height { get { return _myHeight; } }
 
-    //aca seria el count
     public int Capacity { get { return _myWidth * _myHeight; } }
 
     public IEnumerator<T> GetEnumerator()

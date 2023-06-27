@@ -10,26 +10,26 @@ public class Sudoku : MonoBehaviour
     public Canvas canvas;
     public Text feedback;
     public float stepDuration = 0.01f;
-    [Range(1, 82)] public int difficulty = 40;
+    [Range(1, 82)] public int difficulty;
 
     Matrix<Cell> _board;
     Matrix<int> _createdMatrix;
-    List<int> posibles = new List<int>();
+    List<Matrix<int>> mySolution = new List<Matrix<int>>();
     int _smallSide;
     int _bigSide;
     string memory = "";
     string canSolve = "";
-    bool canPlayMusic = false;
     List<int> nums = new List<int>();
+
 
 
 
     float r = 1.0594f;
     float frequency = 440;
-    float gain = 0.5f;
     float increment;
     float phase;
-    float samplingF = 48000;
+
+    int watchdog = 0;
 
 
     void Start()
@@ -53,6 +53,8 @@ public class Sudoku : MonoBehaviour
 
     void ClearBoard()
     {
+
+        mySolution.Clear();
         _createdMatrix = new Matrix<int>(_bigSide, _bigSide);
         foreach (var cell in _board)
         {
@@ -81,8 +83,7 @@ public class Sudoku : MonoBehaviour
 
 
 
-    //IMPLEMENTAR
-    int watchdog;
+
     bool RecuSolve(Matrix<int> matrixParent, int x, int y, int protectMaxDepth, List<Matrix<int>> solution)
     {
         if (x == _bigSide)
@@ -124,31 +125,16 @@ public class Sudoku : MonoBehaviour
     }
 
 
-    void OnAudioFilterRead(float[] array, int channels)
-    {
-        if (canPlayMusic)
-        {
-            increment = frequency * Mathf.PI / samplingF;
-            for (int i = 0; i < array.Length; i++)
-            {
-                phase = phase + increment;
-                array[i] = (float)(gain * Mathf.Sin((float)phase));
-            }
-        }
-
-    }
     void changeFreq(int num)
     {
         frequency = 440 + num * 80;
     }
 
-    //IMPLEMENTAR - punto 3
     IEnumerator ShowSequence(List<Matrix<int>> seq)
     {
         for (int i = 0; i < seq.Count; i++)
         {
-            Matrix<int> step = seq[i];
-            ApplyStep(step);
+            ApplyStep(mySolution[i]);
             feedback.text = string.Format("Pasos: {0}/{1} - {2} - {3}", i + 1, seq.Count, memory, canSolve);
 
             yield return new WaitForSeconds(stepDuration);
@@ -156,42 +142,37 @@ public class Sudoku : MonoBehaviour
 
     }
 
-  
 
-    //modificar lo necesario para que funcione.
     void SolvedSudoku()
     {
         StopAllCoroutines();
         nums = new List<int>();
-        var solution = new List<Matrix<int>>();
         watchdog = 100000;
-        var result = RecuSolve(_createdMatrix, 0, 0, difficulty, solution);
+        var result = RecuSolve(_createdMatrix, 0, 0, difficulty, mySolution);
         var mem = System.GC.GetTotalMemory(true);
         memory = string.Format("MEM: {0:f2}MB", mem / (1024f * 1024f));
         canSolve = result ? " VALID" : " INVALID";
-        feedback.text = "Pasos: " + solution.Count + "/" + solution.Count + " - " + memory + " - " + canSolve;
+        feedback.text = "Pasos: " + mySolution.Count + "/" + mySolution.Count + " - " + memory + " - " + canSolve;
 
-        StartCoroutine(ShowSequence(solution));
+        StartCoroutine(ShowSequence(mySolution));
     }
 
     void CreateSudoku()
     {
         StopAllCoroutines();
         nums = new List<int>();
-        canPlayMusic = false;
         ClearBoard();
-        List<Matrix<int>> l = new List<Matrix<int>>();
         watchdog = 100000;
         GenerateValidLine(_createdMatrix, 0, 0);
-        var result = RecuSolve(_createdMatrix, 0, 0, difficulty, l);
-        _createdMatrix = l[0].Clone();
+        var result = RecuSolve(_createdMatrix, 0, 0, difficulty, mySolution);
+        _createdMatrix = mySolution[0].Clone();
         LockRandomCells();
         ClearUnlocked(_createdMatrix);
         TranslateAllValues(_createdMatrix);
         long mem = System.GC.GetTotalMemory(true);
         memory = string.Format("MEM: {0:f2}MB", mem / (1024f * 1024f));
         canSolve = result ? " VALID" : " INVALID";
-        feedback.text = "Pasos: " + l.Count + "/" + l.Count + " - " + memory + " - " + canSolve;
+        feedback.text = "Pasos: " + mySolution.Count + "/" + mySolution.Count + " - " + memory + " - " + canSolve;
     }
     void GenerateValidLine(Matrix<int> mtx, int x, int y)
     {
